@@ -7,19 +7,19 @@
 #define Y_DIR A3
 void setup() {
 // put your setup code here, to run once:
-pinMode(X_STEP, OUTPUT);//½ºÅÜ¸ğÅÍ xÃà
-pinMode(X_DIR, OUTPUT);//½ºÅÜ¸ğÅÍ xÃà ¹æÇâ
-pinMode(Y_STEP, OUTPUT);//½ºÅÜ¸ğÅÍ yÃà
-pinMode(Y_DIR, OUTPUT);//½ºÅÜ¸ğÅÍ yÃà ¹æÇâ
+pinMode(X_STEP, OUTPUT);//ìŠ¤í…ëª¨í„° xì¶•
+pinMode(X_DIR, OUTPUT);//ìŠ¤í…ëª¨í„° xì¶• ë°©í–¥
+pinMode(Y_STEP, OUTPUT);//ìŠ¤í…ëª¨í„° yì¶•
+pinMode(Y_DIR, OUTPUT);//ìŠ¤í…ëª¨í„° yì¶• ë°©í–¥
 }
 
-//½ºÅÜ¸ğÅÍ ¹æÇâº°·Î 2¹ÙÄû¹İ¾¿ µ¹¸®±â
+//ìŠ¤í…ëª¨í„° ë°©í–¥ë³„ë¡œ 2ë°”í€´ë°˜ì”© ëŒë¦¬ê¸°
 void loop() {
 // put your main code here, to run repeatedly:
-digitalWrite(X_DIR, HIGH); //È¸Àü ¹æÇâ ¼³Á¤
+digitalWrite(X_DIR, HIGH); //íšŒì „ ë°©í–¥ ì„¤ì •
 digitalWrite(Y_DIR, LOW);
 
-for(int x = 0; x < 500; x++) //100¸¶´Ù ÇÑ¹ÙÄû¾¿ È¸Àü
+for(int x = 0; x < 500; x++) //100ë§ˆë‹¤ í•œë°”í€´ì”© íšŒì „
 {
 digitalWrite(X_STEP, HIGH);
 digitalWrite(Y_STEP, HIGH);
