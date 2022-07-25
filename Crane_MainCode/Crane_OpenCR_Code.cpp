@@ -124,11 +124,8 @@ void hold(int value) {
       }
     }
     temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value >= defaultFloor - 20) {
-      dxl.torqueOff(DXL_ID);
-      dxl.torqueOn(DXL_ID);
+    if (temp_value >= defaultFloor - 20)
       break;
-    }
   }
   servo1.write(50);
   delay(1);
@@ -138,11 +135,8 @@ void hold(int value) {
   dxl.setGoalPosition(DXL_ID, defaultFloor);
   while (1) {
     temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value <= defaultFloor + 20) {
-      dxl.torqueOff(DXL_ID);
-      dxl.torqueOn(DXL_ID);
+    if (temp_value <= defaultFloor + 20) 
       break;
-    }
   }
 }
 
@@ -156,11 +150,8 @@ void putDown(int value) {
   dxl.setGoalPosition(DXL_ID, value);
   while (1) {
     temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value >= value - 20) {
-      dxl.torqueOff(DXL_ID);
-      dxl.torqueOn(DXL_ID);
+    if (temp_value >= value - 20)
       break;
-    }
   }
 
   servo1.write(150);
@@ -171,10 +162,7 @@ void putDown(int value) {
   dxl.setGoalPosition(DXL_ID, defaultFloor);
   while (1) {
     temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value <= defaultFloor + 20) {
-      dxl.torqueOff(DXL_ID);
-      dxl.torqueOn(DXL_ID);
+    if (temp_value <= defaultFloor + 20) 
       break;
-    }
   }
 }
