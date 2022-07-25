@@ -11,7 +11,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Empty.h>
 
-#define DXL_SERIAL   Serial3
+#define DXL_SERIAL Serial3
 #define DEBUG_SERIAL Serial
 
 #define End 7
@@ -27,7 +27,7 @@ const int DXL_DIR_PIN = 84;
 const uint8_t DXL_ID = 1;
 const float DXL_PROTOCOL_VERSION = 2.0;
 
-ros::NodeHandle  nh;
+ros::NodeHandle nh;
 std_msgs::Empty str_msg;
 ros::Publisher next_pub("next_move", &str_msg);
 ros::Publisher complete_pub("complete", &str_msg);
@@ -36,7 +36,7 @@ Dynamixel2Arduino dxl(DXL_SERIAL, DXL_DIR_PIN);
 Servo servo1;
 Servo servo2;
 
-int result[3] = { defaultFloor, firstFloor, secondFloor };
+int result[3] = {defaultFloor, firstFloor, secondFloor};
 
 void hold(int value);
 void putDown(int value);
@@ -46,24 +46,25 @@ void move_putDown(const std_msgs::UInt16 &cmd_msg);
 
 void move_hold(const std_msgs::UInt16 &cmd_msg)
 {
-    int value = result[cmd_msg.data];
+  int value = result[cmd_msg.data];
 
-    hold(value);
-    next_pub.publish(&str_msg);
+  hold(value);
+  next_pub.publish(&str_msg);
 }
 
 void move_putDown(const std_msgs::UInt16 &cmd_msg)
 {
-    int value = result[cmd_msg.data];
+  int value = result[cmd_msg.data];
 
-    putDown(value);
-    complete_pub.publish(&str_msg);
+  putDown(value);
+  complete_pub.publish(&str_msg);
 }
 
 ros::Subscriber<std_msgs::UInt16> hold_sub("/grep_hold", move_hold);
 ros::Subscriber<std_msgs::UInt16> putDown_sub("/grep_putDown", move_putDown);
 
-void setup() {
+void setup()
+{
   servo1.attach(9);
   servo2.attach(10);
   pinMode(End, INPUT);
@@ -81,74 +82,84 @@ void setup() {
   nh.initNode();
   nh.subscribe(hold_sub);
   nh.subscribe(putDown_sub);
-  
+
   nh.advertise(next_pub);
   nh.advertise(complete_pub);
-  
 }
 
-void loop() {
+void loop()
+{
   nh.spinOnce();
   delay(10);
 }
 
-void hold(int value) {
+void hold(int value)
+{
   uint8_t now_value;
   uint8_t temp_value;
   servo1.write(150);
   delay(1);
   servo2.write(150);
   delay(10);
+  while (1)
+  {
+    dxl.setGoalPosition(DXL_ID, value);
+    while (1)
+    {
+      if (digitalRead(End) == LOW)
+      {
+        now_value = dxl.getPresentPosition(DXL_ID);
+        dxl.torqueOff(DXL_ID);
+        dxl.torqueOn(DXL_ID);
 
-  dxl.setGoalPosition(DXL_ID, value);
-  while (1) {
-    if (digitalRead(End) == LOW) {
-      now_value = dxl.getPresentPosition(DXL_ID);
-      dxl.torqueOff(DXL_ID);
-      dxl.torqueOn(DXL_ID);
+        servo1.write(50);
+        delay(1);
+        servo2.write(50);
+        delay(10);
 
-      servo1.write(50);
-      delay(1);
-      servo2.write(50);
-      delay(10);
-
-      dxl.setGoalPosition(DXL_ID, -now_value);
-      while (1) {
-        temp_value = dxl.getPresentPosition(DXL_ID);
-        if (temp_value >= (-now_value) + 20) {
-          dxl.torqueOff(DXL_ID);
-          dxl.torqueOn(DXL_ID);
-          break;
+        dxl.setGoalPosition(DXL_ID, -now_value);
+        while (1)
+        {
+          temp_value = dxl.getPresentPosition(DXL_ID);
+          if (temp_value >= (-now_value) + 20)
+          {
+            dxl.torqueOff(DXL_ID);
+            dxl.torqueOn(DXL_ID);
+            break;
+          }
+          return;
         }
-        return;
       }
+      temp_value = dxl.getPresentPosition(DXL_ID);
+      if (temp_value >= defaultFloor - 20)
+        break;
     }
-    temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value >= defaultFloor - 20)
-      break;
-  }
-  servo1.write(50);
-  delay(1);
-  servo2.write(50);
-  delay(10);
+    servo1.write(50);
+    delay(1);
+    servo2.write(50);
+    delay(10);
 
-  dxl.setGoalPosition(DXL_ID, defaultFloor);
-  while (1) {
-    temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value <= defaultFloor + 20) 
-      break;
+    dxl.setGoalPosition(DXL_ID, defaultFloor);
+    while (1)
+    {
+      temp_value = dxl.getPresentPosition(DXL_ID);
+      if (temp_value <= defaultFloor + 20)
+        break;
+    }
   }
 }
 
-void putDown(int value) {
+void putDown(int value)
+{
   uint8_t temp_value;
   servo1.write(50);
   delay(1);
   servo2.write(50);
   delay(10);
-  
+
   dxl.setGoalPosition(DXL_ID, value);
-  while (1) {
+  while (1)
+  {
     temp_value = dxl.getPresentPosition(DXL_ID);
     if (temp_value >= value - 20)
       break;
@@ -158,11 +169,12 @@ void putDown(int value) {
   delay(1);
   servo2.write(150);
   delay(10);
-  
+
   dxl.setGoalPosition(DXL_ID, defaultFloor);
-  while (1) {
+  while (1)
+  {
     temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value <= defaultFloor + 20) 
+    if (temp_value <= defaultFloor + 20)
       break;
   }
 }
