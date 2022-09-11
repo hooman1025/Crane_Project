@@ -27,9 +27,6 @@
 #define Z_MIN 18
 #define Z_MAX 19
 
-#define JOY_X A3
-#define JOY_Y A4
-
 #define RESET 100
 #define READY 101
 #define WORKING 102
@@ -39,12 +36,13 @@ ros::NodeHandle  nh;
 void* recv_msg(void* arg);
 
 std_msgs::UInt16 int_msg;
-ros::Publisher opencr_msg1("/grep_hold", &int_msg);
-ros::Publisher opencr_msg2("/grep_putDown", &int_msg);
+ros::Publisher opencr_hold("/grep_hold", &int_msg);
+ros::Publisher opencr_putDown("/grep_putDown", &int_msg);
 
-int joy_x, joy_y;
 int x = 0, y = 0;
 int location[] = {0, 0, 0, 0, 0, 0}; //최댓값 2,1
+
+String alarm_str[2] = { "Safe", "Danger" };
 
 // 필요한 함수들
 void HOME(); //초기상태로 돌아오는 함수
@@ -53,25 +51,30 @@ void Split(String sData, char cSeparator); //파싱함수
 int step_dir(int value, int dir); //모터 방향제어
 int flag = RESET;
 bool input_value = false;
+bool emergency_status = false;
 
 void step_move(const std_msgs::String &cmd_msg) { //좌표값을 파싱으로 x축, y축 값에따라 크레인 이동(컨테이너 올릴 좌표)
   if (flag == READY) {
     Split(cmd_msg.data, ',');
     crane_move(location[0], location[1]);
     int_msg.data = location[2];
-    opencr_msg1.publish(&int_msg);
+    while (1) {
+      if (emergency_status == false) {
+        opencr_hold.publish(&int_msg);
+        break;
+      }
+    }
   }
 }
-
-void next_move(const std_msgs::Empty &cmd_msg) { //좌표값을 파싱으로 x축, y축 값에따라 크레인 이동(컨테이너 올릴 좌표)
+void next_move(const std_msgs::Empty & cmd_msg) { //좌표값을 파싱으로 x축, y축 값에따라 크레인 이동(컨테이너 올릴 좌표)
   if (flag == READY) {
     crane_move(location[3], location[4]);
     int_msg.data = location[5];
-    opencr_msg2.publish(&int_msg);
+    opencr_putDown.publish(&int_msg);
   }
 }
 
-void home_cb(const std_msgs::Empty& msg) { //초기상태로 돌아오는 함수
+void home_cb(const std_msgs::Empty & msg) { //초기상태로 돌아오는 함수
   if (flag == READY) {
     flag = RESET;
     HOME();
@@ -79,10 +82,19 @@ void home_cb(const std_msgs::Empty& msg) { //초기상태로 돌아오는 함수
   }
 }
 
+void emergency(const std_msgs::String & msg) { //초기상태로 돌아오는 함수
+  String str_tmp = msg.data;
+  if (str_tmp == alarm_str[0])
+    emergency_status = false;
+  else if (str_tmp == alarm_str[1])
+    emergency_status = true;
+}
+
 //ros를 사용하기 위한 명령어
-ros::Subscriber<std_msgs::String> sub1("/step_move", step_move);
-ros::Subscriber<std_msgs::Empty> sub2("/next_move", next_move);
-ros::Subscriber<std_msgs::Empty> sub3("/home", home_cb);
+ros::Subscriber<std_msgs::String> sub_step_move("/step_move", step_move);
+ros::Subscriber<std_msgs::Empty> sub_next_move("/next_move", next_move);
+ros::Subscriber<std_msgs::Empty> sub_home("/home", home_cb);
+ros::Subscriber<std_msgs::String> alram("/alarm", emergency);
 
 void setup() {
   pinMode(X_STEP, OUTPUT);
@@ -107,12 +119,12 @@ void setup() {
   digitalWrite(Y_DIR, LOW);
 
   nh.initNode();
-  nh.subscribe(sub1);
-  nh.subscribe(sub2);
-  nh.subscribe(sub3);
+  nh.subscribe(sub_step_move);
+  nh.subscribe(sub_next_move);
+  nh.subscribe(sub_home);
 
-  nh.advertise(opencr_msg1);
-  nh.advertise(opencr_msg2);
+  nh.advertise(opencr_hold);
+  nh.advertise(opencr_putDown);
 
   HOME();
 }
@@ -165,7 +177,7 @@ void crane_move(int x_value, int y_value) {
     digitalWrite(X_DIR, step_dir(x, x_value)); //방향설정
     if ((x_value -= x) < 0)// 설정좌표에서 현재좌표를 뺀 값이 음수이면
       x_value *= -1;//양수로 변경
-    for (int i = 0; i < 12800 * (x_value); i++) {
+    for (int i = 0; i < 12200 * (x_value); i++) {
 
       digitalWrite(X_STEP, HIGH);
       delayMicroseconds(100);

@@ -1,8 +1,3 @@
-//#if (ARDUINO >= 100)
-//#include <Arduino.h>
-//#else
-//#include <WProgram.h>
-//#endif
 #include <Dynamixel2Arduino.h>
 #include <Servo.h>
 
@@ -17,14 +12,15 @@
 #define End 7
 
 #define defaultFloor 0
-#define firstFloor 9000
-#define secondFloor 5000
+#define firstFloor -9500
+#define secondFloor -6800
 
 using namespace ControlTableItem;
 
 uint8_t now_value;
 const int DXL_DIR_PIN = 84;
-const uint8_t DXL_ID = 1;
+const uint8_t DXL_ID1 = 1;
+const uint8_t DXL_ID2 = 2;
 const float DXL_PROTOCOL_VERSION = 2.0;
 
 ros::NodeHandle  nh;
@@ -46,18 +42,18 @@ void move_putDown(const std_msgs::UInt16 &cmd_msg);
 
 void move_hold(const std_msgs::UInt16 &cmd_msg)
 {
-    int value = result[cmd_msg.data];
+  int value = result[cmd_msg.data];
 
-    hold(value);
-    next_pub.publish(&str_msg);
+  hold(value);
+  next_pub.publish(&str_msg);
 }
 
 void move_putDown(const std_msgs::UInt16 &cmd_msg)
 {
-    int value = result[cmd_msg.data];
+  int value = result[cmd_msg.data];
 
-    putDown(value);
-    complete_pub.publish(&str_msg);
+  putDown(value);
+  complete_pub.publish(&str_msg);
 }
 
 ros::Subscriber<std_msgs::UInt16> hold_sub("/grep_hold", move_hold);
@@ -72,19 +68,24 @@ void setup() {
 
   dxl.begin(57600);
   dxl.setPortProtocolVersion(DXL_PROTOCOL_VERSION);
-  dxl.ping(DXL_ID);
+  dxl.ping(DXL_ID1);
+  dxl.ping(DXL_ID2);
 
-  dxl.torqueOff(DXL_ID);
-  dxl.setOperatingMode(DXL_ID, OP_EXTENDED_POSITION);
-  dxl.torqueOn(DXL_ID);
+  dxl.torqueOff(DXL_ID1);
+  dxl.setOperatingMode(DXL_ID1, OP_EXTENDED_POSITION);
+  dxl.torqueOn(DXL_ID1);
+
+  dxl.torqueOff(DXL_ID2);
+  dxl.setOperatingMode(DXL_ID2, OP_EXTENDED_POSITION);
+  dxl.torqueOn(DXL_ID2);
 
   nh.initNode();
   nh.subscribe(hold_sub);
   nh.subscribe(putDown_sub);
-  
+
   nh.advertise(next_pub);
   nh.advertise(complete_pub);
-  
+
 }
 
 void loop() {
@@ -93,76 +94,43 @@ void loop() {
 }
 
 void hold(int value) {
-  uint8_t now_value;
-  uint8_t temp_value;
+
   servo1.writeMicroseconds(2400);
   delay(1);
   servo2.writeMicroseconds(2400);
-  delay(10);
+  delay(2500);
 
-  dxl.setGoalPosition(DXL_ID, value);
-  while (1) {
-    if (digitalRead(End) == LOW) {
-      now_value = dxl.getPresentPosition(DXL_ID);
-      dxl.torqueOff(DXL_ID);
-      dxl.torqueOn(DXL_ID);
+  dxl.setGoalPosition(DXL_ID1, value);
+  dxl.setGoalPosition(DXL_ID2, value);
+  delay(2500);
 
-      servo1.writeMicroseconds(2100);
-      delay(1);
-      servo2.wwriteMicroseconds(2100);
-      delay(10);
-
-      dxl.setGoalPosition(DXL_ID, -now_value);
-      while (1) {
-        temp_value = dxl.getPresentPosition(DXL_ID);
-        if (temp_value >= (-now_value) + 20) {
-          dxl.torqueOff(DXL_ID);
-          dxl.torqueOn(DXL_ID);
-          break;
-        }
-        return;
-      }
-    }
-    temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value >= defaultFloor - 20)
-      break;
-  }
   servo1.writeMicroseconds(2100);
   delay(1);
   servo2.writeMicroseconds(2100);
-  delay(10);
+  delay(2500);
 
-  dxl.setGoalPosition(DXL_ID, defaultFloor);
-  while (1) {
-    temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value <= defaultFloor + 20)
-      break;
-  }
+  dxl.setGoalPosition(DXL_ID1, defaultFloor);
+  dxl.setGoalPosition(DXL_ID2, defaultFloor);
+  delay(2500);
 }
 
 void putDown(int value) {
-  uint8_t temp_value;
+
   servo1.writeMicroseconds(2100);
   delay(1);
   servo2.writeMicroseconds(2100);
-  delay(10);
-  
-  dxl.setGoalPosition(DXL_ID, value);
-  while (1) {
-    temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value >= value - 20)
-      break;
-  }
+  delay(2500);
+
+  dxl.setGoalPosition(DXL_ID1, value);
+  dxl.setGoalPosition(DXL_ID2, value);
+  delay(2500);
 
   servo1.writeMicroseconds(2400);
   delay(1);
   servo2.writeMicroseconds(2400);
-  delay(10);
-  
-  dxl.setGoalPosition(DXL_ID, defaultFloor);
-  while (1) {
-    temp_value = dxl.getPresentPosition(DXL_ID);
-    if (temp_value <= defaultFloor + 20)
-      break;
-  }
+  delay(2500);
+
+  dxl.setGoalPosition(DXL_ID1, defaultFloor);
+  dxl.setGoalPosition(DXL_ID2, defaultFloor);
+  delay(2500);
 }

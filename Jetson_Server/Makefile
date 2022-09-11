@@ -1,10 +1,10 @@
 #CC:=arm-linux-gcc
 CC:=g++
 
-TARGET_SRV=chat_server
+TARGET_SRV=Server
 OBJECT_SRV=$(TARGET_SRV).o 
 
-TARGET_CLN=chat_client
+TARGET_CLN=Client
 OBJECT_CLN=$(TARGET_CLN).o 
 
 #LDFLAGS=-D_REENTRANT -pthread -lmysqlclient
